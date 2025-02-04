@@ -93,7 +93,7 @@ module Authentication
 
       assert_equal 1, identities.length
       assert_equal rsa_cert.to_blob, identities.first.to_blob
-      assert_equal({ from: :file, file: first }, manager.known_identities[rsa_cert])
+      assert_equal({ from: :file, file: first + "-cert.pub" }, manager.known_identities[rsa_cert])
     end
 
     def test_each_identity_should_use_cert_data
