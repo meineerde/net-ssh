@@ -247,21 +247,24 @@ module Net
         # Prepares identities from user key_files for loading, preserving their order and sources.
         def prepare_identities_from_files
           key_files.map do |file|
-            if readable_file?(file)
-              identity = {}
-              cert_file = file + "-cert.pub"
-              public_key_file = file + ".pub"
-              if readable_file?(cert_file)
-                identity[:load_from] = :pubkey_file
-                identity[:pubkey_file] = cert_file
-              elsif readable_file?(public_key_file)
-                identity[:load_from] = :pubkey_file
-                identity[:pubkey_file] = public_key_file
-              else
-                identity[:load_from] = :privkey_file
-              end
-              identity.merge(privkey_file: file)
+            identity = {}
+            cert_file = file + "-cert.pub"
+            public_key_file = file + ".pub"
+
+            if readable_file?(cert_file)
+              identity[:load_from] = :pubkey_file
+              identity[:pubkey_file] = cert_file
+            elsif readable_file?(public_key_file)
+              identity[:load_from] = :pubkey_file
+              identity[:pubkey_file] = public_key_file
             end
+
+            if readable_file?(file)
+              identity[:load_from] ||= :privkey_file
+              identity[:privkey_file] = file
+            end
+
+            identity unless identity.empty?
           end.compact
         end
 
@@ -282,7 +285,7 @@ module Net
             case identity[:load_from]
             when :pubkey_file
               key = KeyFactory.load_public_key(identity[:pubkey_file])
-              { public_key: key, from: :file, file: identity[:privkey_file] }
+              { public_key: key, from: :file, file: identity[:pubkey_file] }
             when :privkey_file
               private_key = KeyFactory.load_private_key(
                 identity[:privkey_file], options[:passphrase], ask_passphrase, options[:password_prompt]
